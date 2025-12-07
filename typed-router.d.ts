@@ -30,9 +30,9 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | never
     >,
-    '/AscallText': RouteRecordInfo<
-      '/AscallText',
-      '/AscallText',
+    '/AsciiText': RouteRecordInfo<
+      '/AsciiText',
+      '/AsciiText',
       Record<never, never>,
       Record<never, never>,
       | never
@@ -56,9 +56,9 @@ declare module 'vue-router/auto-routes' {
       views:
         | never
     }
-    'src/text/AscallText.page.vue': {
+    'src/text/AsciiText.page.vue': {
       routes:
-        | '/AscallText'
+        | '/AsciiText'
       views:
         | never
     }
