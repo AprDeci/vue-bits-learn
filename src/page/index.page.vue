@@ -9,9 +9,9 @@
 <template>
   <div>
     <ul>
-      <a v-for="route in routeList" :key="route.path" :href="route.path">
-        {{ route.path }}
-      </a>
+      <li v-for="route in routeList" :key="route.path">
+        <a :href="route.path">{{ route.path }}</a>
+      </li>
     </ul>
   </div>
 </template>

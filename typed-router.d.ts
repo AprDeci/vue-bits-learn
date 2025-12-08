@@ -37,6 +37,13 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | never
     >,
+    '/circleText': RouteRecordInfo<
+      '/circleText',
+      '/circleText',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
   }
 
   /**
@@ -59,6 +66,12 @@ declare module 'vue-router/auto-routes' {
     'src/text/AsciiText.page.vue': {
       routes:
         | '/AsciiText'
+      views:
+        | never
+    }
+    'src/text/circleText.page.vue': {
+      routes:
+        | '/circleText'
       views:
         | never
     }
