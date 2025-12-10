@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, useTemplateRef, watch } from "vue";
+import { nextTick, onMounted, onUnmounted, ref, useTemplateRef, watch } from "vue";
 
 interface DecryptedTextProps {
 	text: string;
@@ -124,10 +124,112 @@ watch(
 			clearInterval(interval);
 			interval = null;
 		}
+
+		if (isHovering.value) {
+			isScrambling.value = true;
+			interval = setInterval(() => {
+				if (props.sequential) {
+					// 顺序模式
+					if (revealIndices.value.size < props.text.length) {
+						const nextIndex = getNextIndex(revealIndices.value);
+						const newRevealed = new Set(revealIndices.value);
+						newRevealed.add(nextIndex);
+						revealIndices.value = newRevealed;
+						displayText.value = shuffleText(props.text, newRevealed);
+					} else {
+						clearInterval(interval!);
+						interval = null;
+						isScrambling.value = false;
+						emit("animationComplete");
+					}
+				} else {
+					// 所有文字一起乱码
+					displayText.value = shuffleText(props.text, revealIndices.value);
+					currentIteration++;
+					if (currentIteration >= props.maxIterations) {
+						clearInterval(interval!);
+						interval = null;
+						isScrambling.value = false;
+						displayText.value = props.text; // 直接显示真实文字
+						emit("animationComplete");
+					}
+				}
+			}, props.speed);
+		} else {
+			displayText.value = props.text;
+			revealIndices.value = new Set();
+			isScrambling.value = false;
+		}
 	},
 );
+
+const handleMouseEnter = () => {
+	if (props.animateOn === "hover") {
+		isHovering.value = true;
+	}
+};
+
+const handleMouseLeave = () => {
+	if (props.animateOn === "hover") {
+		isHovering.value = false;
+	}
+};
+
+onMounted(async () => {
+	if (props.animateOn === "view") {
+		await nextTick(); // 确保DOM已渲染
+		const observerCallback = (entries: IntersectionObserverEntry[]) => {
+			entries.forEach((entry) => {
+				if (entry.isIntersecting && !hasAnimated.value) {
+					isHovering.value = true;
+					hasAnimated.value = true; // 只触发一次
+				}
+			});
+		};
+		const observerOptions = {
+			root: null,
+			rootMargin: "0px",
+			threshold: 0.1, // 10%可见即触发
+		};
+		intersectionObserver = new IntersectionObserver(observerCallback, observerOptions);
+		if (containerRef.value) {
+			intersectionObserver.observe(containerRef.value);
+		}
+	}
+});
+
+onUnmounted(() => {
+	if (interval) {
+		clearInterval(interval);
+	}
+	if (intersectionObserver && containerRef.value) {
+		intersectionObserver.unobserve(containerRef.value);
+	}
+});
 </script>
 
 <template>
 <div>Decrypted Text</div>
+<div>
+  <span
+    ref="containerRef"
+    :class="`inline-block whitespace-pre-wrap ${props.parentClassName}`"
+    @mouseenter="handleMouseEnter"
+    @mouseleave="handleMouseLeave"
+  >
+    <!-- 无障碍：屏幕阅读器读真实文字 -->
+    <span class="sr-only">{{ displayText }}</span>
+    
+    <!-- 视觉呈现：每个字符单独span，便于不同class -->
+    <span aria-hidden="true">
+      <span
+        v-for="(char, index) in displayText.split('')"
+        :key="index"
+        :class="revealIndices.has(index) || !isScrambling || !isHovering ? props.className : props.encryptedClassName"
+      >
+        {{ char }}
+      </span>
+    </span>
+  </span>
+  </div>
 </template>
