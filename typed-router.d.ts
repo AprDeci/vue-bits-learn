@@ -58,6 +58,13 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | never
     >,
+    '/FuzzyText': RouteRecordInfo<
+      '/FuzzyText',
+      '/FuzzyText',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
   }
 
   /**
@@ -98,6 +105,12 @@ declare module 'vue-router/auto-routes' {
     'src/text/decryptedText.page.vue': {
       routes:
         | '/decryptedText'
+      views:
+        | never
+    }
+    'src/text/FuzzyText.page.vue': {
+      routes:
+        | '/FuzzyText'
       views:
         | never
     }
