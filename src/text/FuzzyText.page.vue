@@ -1,8 +1,8 @@
 <script setup lang="ts">
-  import { useTemplateRef } from "vue";
+  import { nextTick, onMounted, onUnmounted, useTemplateRef, watch } from "vue";
 
   interface FuzzyTextProps {
-    text: string;
+    text?: string;
     fontSize?: number | string;
     fontWeight?: string | number;
     fontFamily?: string;
@@ -13,11 +13,11 @@
   }
 
   const props = withDefaults(defineProps<FuzzyTextProps>(), {
-    text: "",
+    text: "Hello world",
     fontSize: "clamp(2rem, 8vw, 8rem)",
     fontWeight: 900,
     fontFamily: "inherit",
-    color: "#fff",
+    color: "#000",
     enableHover: true,
     baseIntensity: 0.18,
     hoverIntensity: 0.5
@@ -195,7 +195,92 @@
     animationFrameId = window.requestAnimationFrame(run);
 
     run();
+
+    const isInsideTextArea = (x: number, y: number) =>
+      x >= interactiveLeft &&
+      x <= interactiveRight &&
+      y >= interactiveTop &&
+      y <= interactiveBottom;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!props.enableHover) return;
+      const rect = canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      isHovering = isInsideTextArea(x, y);
+    };
+
+    const handleMouseLeave = () => {
+      isHovering = false;
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+      if (!props.enableHover) return;
+      e.preventDefault();
+      const rect = canvas.getBoundingClientRect();
+      const touch = e.touches[0]!;
+      const x = touch.clientX - rect.left;
+      const y = touch.clientY - rect.top;
+      isHovering = isInsideTextArea(x, y);
+    };
+
+    const handleTouchEnd = () => {
+      isHovering = false;
+    };
+
+    if (props.enableHover) {
+      canvas.addEventListener("mousemove", handleMouseMove);
+      canvas.addEventListener("mouseleave", handleMouseLeave);
+      canvas.addEventListener("touchmove", handleTouchMove, { passive: false });
+      canvas.addEventListener("touchend", handleTouchEnd);
+    }
+
+    cleanup = () => {
+      window.cancelAnimationFrame(animationFrameId);
+      if (props.enableHover) {
+        canvas.removeEventListener("mousemove", handleMouseMove);
+        canvas.removeEventListener("mouseleave", handleMouseLeave);
+        canvas.removeEventListener("touchmove", handleTouchMove);
+        canvas.removeEventListener("touchend", handleTouchEnd);
+      }
+    };
   };
+
+  onMounted(() => {
+    nextTick(() => {
+      initCanvas();
+    });
+  });
+
+  onUnmounted(() => {
+    isCancelled = true;
+    if (animationFrameId) window.cancelAnimationFrame(animationFrameId);
+    if (cleanup) cleanup();
+  });
+
+  watch(
+    [
+      () => props.text,
+      () => props.fontSize,
+      () => props.fontWeight,
+      () => props.fontFamily,
+      () => props.color,
+      () => props.enableHover,
+      () => props.baseIntensity,
+      () => props.hoverIntensity
+    ],
+    () => {
+      // 属性变了 → 停止当前动画 → 重新初始化
+      isCancelled = true;
+      if (animationFrameId) window.cancelAnimationFrame(animationFrameId);
+      if (cleanup) cleanup();
+
+      isCancelled = false;
+      nextTick(() => {
+        initCanvas();
+      });
+    }
+  );
 </script>
 
 <template>
